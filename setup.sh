@@ -4,16 +4,18 @@ mkdir $APPLFOWY_PATH
 update_cache() {
     sudo apt update
     sudo apt upgrade -y
+    sudo apt install git -y
 }
 
 install_docker() {
     sudo apt install -y docker.io
-    sudo groupadd docker || return 0
+    sudo systemctl restart docker
+    sudo groupadd docker
     sudo usermod -aG docker $USER || return 0
 }
 
 uninstall_docker() {
-    sudo apt autoremove -y docker.io || 0
+    sudo apt autoremove -y docker.io || return 0
 }
 
 install_compose() {
@@ -25,8 +27,9 @@ uninstall_compose() {
 }
 
 deploy_applflowy_cloud() {
+    git clone --depth 1 --branch 0.4.10 https://github.com/AppFlowy-IO/AppFlowy-Cloud.git $APPLFOWY_PATH
     cd $APPLFOWY_PATH
-    curl -sSL https://raw.githubusercontent.com/AppFlowy-IO/AppFlowy-Cloud/main/docker-compose.yml --output docker-compose.yaml
+    cp deploy.env .env
     docker compose up -d
     cd -
 }
@@ -35,9 +38,25 @@ remove_applflowy_cloud() {
     cd $APPLFOWY_PATH
     docker compose down
     cd -
+    rm -rf $APPLFOWY_PATH
+    docker rmi -f $(docker images -q)
 }
 
-update_cache
-install_docker
-install_compose
-deploy_applflowy_cloud
+cleanup() {
+    remove_applflowy_cloud
+    uninstall_compose
+    uninstall_docker
+}
+
+setup() {
+    update_cache
+    install_docker
+    install_compose
+    deploy_applflowy_cloud
+}
+
+if [[ "$1" == "clean" ]]; then
+    cleanup
+else
+    setup
+fi
