@@ -1,0 +1,43 @@
+APPLFOWY_PATH=appflowy
+mkdir $APPLFOWY_PATH
+
+update_cache() {
+    sudo apt update
+    sudo apt upgrade -y
+}
+
+install_docker() {
+    sudo apt install -y docker.io
+    sudo groupadd docker || return 0
+    sudo usermod -aG docker $USER || return 0
+}
+
+uninstall_docker() {
+    sudo apt autoremove -y docker.io || 0
+}
+
+install_compose() {
+    curl -sSL https://gist.githubusercontent.com/kamuridesu/d8be27b388f54c221a2889e7a94943c3/raw/a46a54047488d7f571459784f4ea5c707f050c68/docker-compose.sh | sh -
+}
+
+uninstall_compose() {
+    rm $DOCKER_CONFIG/cli-plugins/docker-compose
+}
+
+deploy_applflowy_cloud() {
+    cd $APPLFOWY_PATH
+    curl -sSL https://raw.githubusercontent.com/AppFlowy-IO/AppFlowy-Cloud/main/docker-compose.yml --output docker-compose.yaml
+    docker compose up -d
+    cd -
+}
+
+remove_applflowy_cloud() {
+    cd $APPLFOWY_PATH
+    docker compose down
+    cd -
+}
+
+update_cache
+install_docker
+install_compose
+deploy_applflowy_cloud
